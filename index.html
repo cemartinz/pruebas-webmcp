@@ -36,7 +36,7 @@ pre{background:var(--navy);color:#E8D5B0;padding:14px;border-radius:8px;overflow
 
   <section class="card">
     <h2 style="margin-top:0">Formulario declarativo</h2>
-    <p class="note">Sin <code>toolautosubmit</code>: el agente rellena los campos y la persona pulsa «Enviar».</p>
+    <p class="note">Sin <code>toolautosubmit</code>: el agente rellena los campos; la persona pulsa «Continuar», acepta el tratamiento de datos y confirma.</p>
     <form id="f-declarativo" action="#" method="get"
           toolname="solicitar_propuesta_o_cita_prueba"
           tooldescription="Solicitar una propuesta o una cita de PRUEBA con un consultor financiero. La persona debe revisar los datos y confirmar el envío con su propio clic. Es una prueba técnica: no es asesoría ni promesa de resultados.">
@@ -46,10 +46,15 @@ pre{background:var(--navy);color:#E8D5B0;padding:14px;border-radius:8px;overflow
       <input id="d-correo" name="correo" type="email" required toolparamdescription="Correo de prueba (no uses datos reales)">
       <label for="d-mensaje">Su pregunta o lo que desea planear</label>
       <textarea id="d-mensaje" name="mensaje" rows="3" required toolparamdescription="Consulta de prueba"></textarea>
-      <label class="chk"><input type="checkbox" name="habeas_data" required>
-        <span>Autorizo el tratamiento de mis datos personales (casilla que solo marca la persona).</span></label>
-      <button type="submit">Enviar</button>
+      <button type="submit">Continuar</button>
     </form>
+    <!-- Paso final, FUERA del formulario con toolname: la casilla de habeas data no es parámetro de ninguna herramienta y solo la marca la persona. -->
+    <div id="paso-final" hidden style="margin-top:16px;border-top:1px solid var(--line);padding-top:8px">
+      <p><strong>Último paso (lo hace la persona):</strong> revise sus datos y confirme.</p>
+      <label class="chk"><input type="checkbox" id="habeas-final">
+        <span>Autorizo el tratamiento de mis datos personales conforme a la Ley 1581 de 2012.</span></label>
+      <button type="button" id="confirmar" disabled>Confirmar envío</button>
+    </div>
   </section>
 
   <section class="card">
@@ -65,15 +70,20 @@ pre{background:var(--navy);color:#E8D5B0;padding:14px;border-radius:8px;overflow
   var log=document.getElementById('log'), estado=document.getElementById('estado');
   function w(msg){ log.textContent=new Date().toISOString()+'  '+msg; }
 
-  // Envío del formulario declarativo: se registra si lo disparó un agente; no sale ningún dato de la página.
+  // Paso 1: el formulario declarativo solo prepara la solicitud. No lleva casilla de consentimiento.
+  var paso=document.getElementById('paso-final'), chk=document.getElementById('habeas-final'), conf=document.getElementById('confirmar');
   document.getElementById('f-declarativo').addEventListener('submit',function(e){
     e.preventDefault();
     var porAgente=('agentInvoked' in e)?e.agentInvoked:'no disponible';
-    w('Envío del formulario declarativo. agentInvoked='+porAgente+'. (Prueba: no se envió nada a ningún servidor.)');
+    paso.hidden=false; chk.checked=false; conf.disabled=true;
+    w('Solicitud preparada. agentInvoked='+porAgente+'. Falta que la persona acepte el tratamiento de datos y confirme. (Prueba: no se envió nada.)');
     if(e.agentInvoked && typeof e.respondWith==='function'){
-      e.respondWith(Promise.resolve('Solicitud de prueba recibida. Ilustración técnica, no es asesoría ni promesa de resultados.'));
+      e.respondWith(Promise.resolve('Solicitud preparada. La persona debe aceptar el tratamiento de datos y confirmar el envío. Ilustración técnica, no es asesoría ni promesa de resultados.'));
     }
   });
+  // Paso 2: solo la persona marca la casilla y confirma.
+  chk.addEventListener('change',function(){ conf.disabled=!chk.checked; });
+  conf.addEventListener('click',function(){ w('Confirmación final por la persona (habeas data aceptado). Prueba: no se envió nada a ningún servidor.'); });
 
   async function iniciar(){
     var info={navegador:navigator.userAgent,contextoSeguro:window.isSecureContext,
