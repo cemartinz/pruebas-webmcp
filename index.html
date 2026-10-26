@@ -35,20 +35,18 @@ pre{background:var(--navy);color:#E8D5B0;padding:14px;border-radius:8px;overflow
   </section>
 
   <section class="card">
-    <h2 style="margin-top:0">Formulario declarativo</h2>
-    <p class="note">Sin <code>toolautosubmit</code>: el agente rellena los campos; la persona pulsa «Continuar», acepta el tratamiento de datos y confirma.</p>
-    <form id="f-declarativo" action="#" method="get"
-          toolname="solicitar_propuesta_o_cita_prueba"
-          tooldescription="Solicitar una propuesta o una cita de PRUEBA con un consultor financiero. La persona debe revisar los datos y confirmar el envío con su propio clic. Es una prueba técnica: no es asesoría ni promesa de resultados.">
+    <h2 style="margin-top:0">Formulario para personas (sin marcado de agente)</h2>
+    <p class="note">El marcado declarativo de WebMCP no permite declarar <code>consequentialHint</code>, así que este formulario no se expone a agentes. La acción con consecuencias se ofrece solo por la herramienta imperativa, que sí lleva ese aviso. La persona rellena, acepta el tratamiento de datos y confirma.</p>
+    <form id="f-declarativo" action="#" method="get">
       <label for="d-nombre">Nombre completo</label>
-      <input id="d-nombre" name="nombre" type="text" required toolparamdescription="Nombre de prueba de quien solicita la cita">
+      <input id="d-nombre" name="nombre" type="text" required>
       <label for="d-correo">Correo para responderle</label>
-      <input id="d-correo" name="correo" type="email" required toolparamdescription="Correo de prueba (no uses datos reales)">
+      <input id="d-correo" name="correo" type="email" required>
       <label for="d-mensaje">Su pregunta o lo que desea planear</label>
-      <textarea id="d-mensaje" name="mensaje" rows="3" required toolparamdescription="Consulta de prueba"></textarea>
+      <textarea id="d-mensaje" name="mensaje" rows="3" required></textarea>
       <button type="submit">Continuar</button>
     </form>
-    <!-- Paso final, FUERA del formulario con toolname: la casilla de habeas data no es parámetro de ninguna herramienta y solo la marca la persona. -->
+    <!-- Paso final, la casilla de habeas data no es parámetro de ninguna herramienta y solo la marca la persona. -->
     <div id="paso-final" hidden style="margin-top:16px;border-top:1px solid var(--line);padding-top:8px">
       <p><strong>Último paso (lo hace la persona):</strong> revise sus datos y confirme.</p>
       <label class="chk"><input type="checkbox" id="habeas-final">
@@ -102,8 +100,12 @@ pre{background:var(--navy);color:#E8D5B0;padding:14px;border-radius:8px;overflow
             correo:{type:'string',format:'email',description:'Correo de prueba (no uses datos reales)'}}},
           annotations:{consequentialHint:true},
           execute:async function(params){
-            w('Herramienta imperativa ejecutada con: '+JSON.stringify(params)+' (no se envió nada).');
-            return JSON.stringify({exito:true,mensaje:'Solicitud de prueba registrada. Su abogado y su contador confirman su caso; esto no es asesoría ni promesa de resultados.'});
+            var f=document.getElementById('f-declarativo');
+            f.nombre.value=params.nombre||''; f.correo.value=params.correo||'';
+            f.mensaje.value='Cita de prueba: '+params.fecha_preferida+' ('+params.franja+')';
+            paso.hidden=false; chk.checked=false; conf.disabled=true;
+            w('Herramienta imperativa: solicitud preparada con '+JSON.stringify(params)+'. Falta que la persona acepte el tratamiento de datos y confirme. (No se envió nada.)');
+            return JSON.stringify({exito:false,pendiente:true,mensaje:'Solicitud preparada, NO enviada. La persona debe aceptar el tratamiento de datos y confirmar con su propio clic. Su abogado y su contador confirman su caso; esto no es asesoría ni promesa de resultados.'});
           }
         });
         info.registro='ok';
